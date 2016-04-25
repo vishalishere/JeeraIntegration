@@ -1,0 +1,123 @@
+﻿@model  List<JiraIntegration.Models.RequestDependencyListModel>
+@using JiraIntegration.Entities
+<div class="requestListCont">
+    <table border="1" width="100%">
+        <thead>
+            <tr>
+                <th>From</th>
+                <th>To</th>
+                <th>Summary</th>
+                <th>Description</th>
+                <th>Need By Sprint</th>
+                <th>Blocked Story</th>
+                <th>Scheduled In</th>
+                <th>Dependency Story</th>
+                <th>Scheduled In</th>
+                <th>Take an Action</th>
+                <th>Reason</th>
+                <th>SoS Status</th>
+                <th>Comment</th>
+            </tr>
+        </thead>
+
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td style="width: 100px;">
+                    @item.FromTeam
+                </td>
+                <td style="width: 100px;">
+                    @item.ToTeam
+                </td>
+                <td style="width: 550px;">
+                    @item.Description
+                </td>
+                <td style="width: 600px;">
+                    @item.Detail
+                </td>
+                <td style="width: 100px;">
+                    @*@item.NeedBySprint*@
+                    @if (item.SoSStatus != SoSStatus.Closed)
+                    {
+                        @Html.DropDownList(item.NeedBySprint, (IEnumerable<SelectListItem>)ViewBag.Sprints,item.NeedBySprint, new { @class = "blocked-story-NeedBySprint", id = @item.StoryDependencyId })
+                    }
+                </td>
+                <td style="width: 100px;">
+                    <a target="_new" href="https://jira.ges.symantec.com/browse/@item.BlockedStory">@item.BlockedStory</a>
+                <td data-blockedstoryid="@item.BlockedStory" class="blocked-story-Sprint" style="width: 400px"></td>
+                <td style="width: 100px;" class="dependency-story">
+                    <a target="_blank" href="https://jira.ges.symantec.com/browse/@item.DependencyStory">@item.DependencyStory</a>
+                </td>
+                <td data-storydependencyid="@item.DependencyStory" class="dependency-story-Sprint" style="width: 400px"></td>
+                <td>
+                    @if (item.Status == DependencyStatus.Requested && item.IsToTeamStartTeam == true)
+                    {
+                        <div style="width: 250px;" class="action-request-status">
+                            <span>
+                                <a href="#" data-storydependencyid="@item.StoryDependencyId" class="Accept_Link"><img src="~/Content/Accept_button1.png" /></a>
+                            </span>
+                            <span>
+                                <a href="#" data-storydependencyid="@item.StoryDependencyId" class="AskReason_Link"><img src="~/Content/Deny_button1.png" /></a>
+                            </span>
+                            <span>
+                                <a href="#" data-storydependencyid="@item.StoryDependencyId" class="Edit_Link"><img src="~/Content/Edit_button1.png" /></a>
+                            </span>
+                        </div>
+                    }
+                    else if (item.Status == DependencyStatus.Requested && item.IsToTeamStartTeam == false)
+                    {
+                        <div style="width: 250px;" class="action-request-status">
+                            <span>
+                                <a href="#" data-storydependencyid="@item.StoryDependencyId" class="own_link"><img src="~/Content/Ownit_button1.png" /></a>
+                            </span>
+                            <span>
+                                <a href="#" data-storydependencyid="@item.StoryDependencyId" class="AskReason_Link"><img src="~/Content/Deny_button1.png" /></a>
+                            </span>
+                            <span>
+                                <a href="#" data-storydependencyid="@item.StoryDependencyId" class="Edit_Link"><img src="~/Content/Edit_button1.png" /></a>
+                            </span>
+                        </div>
+                    }
+                    else if (item.Status == DependencyStatus.Rejected)
+                    {
+                        <span class="rejected">
+                            Rejected
+                            <a href="#" data-storydependencyid="@item.StoryDependencyId" class="Edit_Link">
+                                <img src="~/Content/Edit_button.png" />
+                            </a>
+                        </span>
+                    }
+                    else if (item.Status == DependencyStatus.Accepted)
+                    {
+                        <strong>Accepted</strong>
+                    }
+                    else if (item.Status == DependencyStatus.Owned)
+                    {
+                        <strong>Owned by: </strong>@item.OwnedBy
+                    }
+                </td>
+                <td style="width: 350px;">
+                    @if (item.Status == DependencyStatus.Rejected)
+                    {
+                        @item.RejectReason
+                    }
+                </td>
+                <td>
+                    @Html.DropDownListFor(a => item.SoSStatus, new SelectList(Enum.GetValues(typeof(SoSStatus)), item.SoSStatus), "",
+                 new { @class = "dependency-story-SOSStatus", id = @item.StoryDependencyId })
+                </td>
+                <td>
+                    @Html.TextAreaFor(a => item.SoSComment, new { @class = "dependency-story-SOSComment", @cols = 80, @rows = 3, id = @item.StoryDependencyId })
+                    <input type="button" value="Save Comment" id=@item.StoryDependencyId class="dependency-story-SOSComment-button" />
+                </td>
+            </tr>
+            @*<tr>
+                    <td colspan="13">
+                        <p>
+                            @item.Description
+                        </p>
+                    </td>
+                </tr>*@
+        }
+    </table>
+</div>

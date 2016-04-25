@@ -1,0 +1,167 @@
+﻿@model JiraIntegration.Models.FeatureViewModel
+@using JiraIntegration.Entities
+
+@{
+    ViewBag.Title = "Manage Feature";
+}
+
+<div class="requestListCont">
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>From Team</th>
+                <th>Complete By Sprint</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        @foreach (var item in Model.FeaturesList)
+        {
+            <tr>
+                <td style="width: 100px;">
+                    @item.FeatureName
+                </td>
+                <td style="width: 100px;">
+                    @item.FromTeam
+                </td>
+                <td style="width: 250px;">
+                    @item.CompleteBySprint
+                </td>
+                <td>
+                    <span>
+                        <a href="/Home/EditFeature" data-featureid="@item.FeatureId" class="Edit_Link"><img src="/Content/Accept-iphone.png" /></a>
+                    </span>
+                </td>
+                <td>
+                    <span>
+                        <a href="/Home/DeleteFeature" data-featureid="@item.FeatureId" class="Delete_Link"><img src="/Content/Deny-iphone.png" /></a>
+                    </span>
+                </td>
+            </tr>
+        }
+    </table>
+</div>
+
+<br /><br />
+@using (Html.BeginForm("AddFeature", "Home",
+       null, FormMethod.Post,
+        new { @id = "FeatureSaveForm", @class = "form-horizontal", role = "form" }))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        <h4>Add a new Feature</h4>
+        <hr />
+        @Html.ValidationSummary(true)
+        @Html.HiddenFor(model => model.FeatureId)
+        <div class="form-group">
+            @Html.LabelFor(model => model.FromTeamId, new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.DropDownListFor(model => model.FromTeamId, Model.FromTeamList, new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.FromTeamId)
+            </div>
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.FeatureName, new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.TextAreaFor(model => model.FeatureName, new { @class = "form-control textarea-model", @maxlength = 1000, @placeholder = "Description" })
+                @Html.ValidationMessageFor(model => model.FeatureName)
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.CompleteBySprintId, new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.DropDownListFor(model => model.CompleteBySprintId, Model.CompleteBySprintList, new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.CompleteBySprintId)
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" id="submitBtn" value="Create" class="btn btn-default active" />
+                <input type="button" value="Clear Form" class="btn btn-default" onclick="ClearFeatureForm();" />
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script type="text/javascript">
+        $(document).ready(function () {
+            BindDeleteFeature();
+            BindEditFeature();
+            ClearFeatureForm();
+        });
+
+        function BindDeleteFeature() {
+            $(".requestListCont").on("click", "a.Delete_Link", function (e) {
+                e.preventDefault();
+                var thisLink = $(this),
+                    featureid = thisLink.attr("data-featureid"),
+                    params = { featureId: featureid };
+                $.ajax({
+                    type: 'POST',
+                    url: $(this)[0].href,
+                    data: params,
+                    success: function (data) {
+                        if (data == "True") {
+                            thisLink.parents("td").parents("tr").remove();
+                        }
+                        else {
+                            alert("Error Rejecting!");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                        PrintToConsole(true, verr);
+                    }
+                });
+            });
+        }
+
+        function BindEditFeature() {
+            $(".requestListCont").on("click", "a.Edit_Link", function (e) {
+                e.preventDefault();
+                var thisLink = $(this),
+                    featureid = thisLink.attr("data-featureid"),
+                    dependecyReqForm = $("#FeatureSaveForm"),
+                    params = { featureId: featureid };
+                $.ajax({
+                    type: 'POST',
+                    url: '/Home/EditFeature',
+                    data: params,
+                    success: function (data) {
+                        if (data != undefined && data.Success === true) {
+                            $("#FeatureId", dependecyReqForm).val(data.FeatureId);
+                            $("#CompleteBySprintId", dependecyReqForm).val(data.CompleteBySprintId);
+                            $("#FeatureName", dependecyReqForm).val(data.FeatureName);
+                            $("#FromTeamId", dependecyReqForm).val(data.FromTeamId).focus();
+                            $("#submitBtn", dependecyReqForm).prop('value', 'Save');
+                        }
+                        else {
+                            alert("Error Editing! Please Refresh and Try");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                        PrintToConsole(true, verr);
+                    }
+                });
+            });
+        }
+
+        function ClearFeatureForm() {
+            var dependecyReqForm = $("#FeatureSaveForm");
+            dependecyReqForm.find('input:text, select, textarea').val('');
+            $("#submitBtn", dependecyReqForm).prop('value', 'Create');
+        }
+
+        function PrintToConsole(isDebug, data) {
+            if (isDebug)
+            { console.trace(data); }
+        }
+    </script>
+
+}

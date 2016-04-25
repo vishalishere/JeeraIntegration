@@ -1,0 +1,780 @@
+﻿@model JiraIntegration.Models.RequestDependencyViewModel
+@using JiraIntegration.Entities
+
+@{
+    ViewBag.Title = "Request a Dependency";
+}
+
+<h2>Manage Dependency</h2>
+<div>
+    <h4>All Story Dependency</h4>
+    <hr />
+    <div id="submitDepDiv">
+
+        @using (Html.BeginForm("RequestDependency", "Home",
+       null, FormMethod.Post,
+        new { @id = "RequestSaveForm", @class = "form-vertical", role = "form" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="form-horizontal" id="submitDepDivInner">
+                <h4>Submit a new Story Dependency Request</h4>
+                <hr />
+                @Html.ValidationSummary(true)
+                @Html.HiddenFor(model => model.StoryDependencyId)
+                <div class="form-group">
+                    @Html.LabelFor(model => model.FromTeamId, new { @class = "control-label col-md-1" })
+                    <div class="col-md-2">
+                        @Html.DropDownListFor(model => model.FromTeamId, Model.FromTeamList, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(model => model.FromTeamId)
+                    </div>
+                    @Html.LabelFor(model => model.BlockedStory, new { @class = "control-label col-md-1" })
+                    <div class="col-md-2">
+                        @Html.TextBoxFor(model => model.BlockedStory, new { @class = "form-control", @placeholder = "Story Key", @maxlength = 100, onblur = "checkStoryKeyValidity()" })
+                        @Html.ValidationMessageFor(model => model.BlockedStory)
+                    </div>
+                    @Html.LabelFor(model => model.ToTeamId, new { @class = "control-label col-md-1" })
+                    <div class="col-md-2">
+                        @Html.DropDownListFor(model => model.ToTeamId, Model.ToTeamList, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(model => model.ToTeamId)
+                    </div>
+                    @Html.LabelFor(model => model.NeedBySprintId, new { @class = "control-label col-md-1" })
+                    <div class="col-md-2">
+                        @Html.DropDownListFor(model => model.NeedBySprintId, Model.NeedBySprintList, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(model => model.NeedBySprintId)
+                    </div>
+                </div>
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Description, new { @class = "control-label col-md-1" })
+                    <div class="col-md-4">
+                        @Html.TextBoxFor(model => model.Description, new { @class = "form-control textarea-model", @maxlength = 1000, @placeholder = "One Line Summary" })
+                        @Html.ValidationMessageFor(model => model.Description)
+                    </div>
+                    @Html.LabelFor(model => model.Detail, new { @class = "control-label col-md-1" })
+                    <div class="col-md-6">
+                        @Html.TextAreaFor(model => model.Detail, new { @class = "form-control textarea-model", @maxlength = 1000, @placeholder = "More details about the request" })
+                        @Html.ValidationMessageFor(model => model.Detail)
+                    </div>
+                </div>
+
+
+
+                @*<div class="form-group">
+                        @Html.LabelFor(model => model.DependencyStory, new { @class = "control-label col-md-2" })
+                        <div class="col-md-10">
+                            @Html.EditorFor(model => model.DependencyStory, new { @class = "form-control", @maxlength = 100 })
+                            @Html.ValidationMessageFor(model => model.DependencyStory)
+                        </div>
+                    </div>*@
+                <div class="form-group">
+                    <div class="col-md-offset-1 col-md-10">
+                        <input type="submit" id="submitBtn" value="Create" class="btn btn-default active" />
+                        <input type="button" value="Clear Form" class="btn btn-default" onclick="ClearRequestForm();" />
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <br /><br />
+    <div>
+        <input type="button" value="Refresh Dependency List" onclick="FetchFilteredData();" />
+        <table>
+            <thead>
+                <tr>
+                    <th>From Team</th>
+                    <th>To Team</th>
+                    <th>Need By Sprint</th>
+                    <th>Request Status</th>
+                    <th>SoS Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tr>
+                <td>@Html.DropDownList("dlFromTeamId", Model.FromTeamList, "--Select--", new { @class = "form-control" })</td>
+                <td>@Html.DropDownList("dlToTeamId", Model.ToTeamList, "--Select--", new { @class = "form-control" })</td>
+                <td>@Html.DropDownList("dlNeedBySprintId", Model.NeedBySprintList, "--Select--", new { @Class = "form-control" })</td>
+                <td>
+                    @Html.DropDownList("dlstatus", new List<SelectListItem>()
+                        {
+                            new SelectListItem { Text = "Requested", Value = "1" },
+                            new SelectListItem { Text = "Accepted", Value = "2" },
+                            new SelectListItem { Text = "Rejected", Value = "3" },
+                            new SelectListItem { Text="Owned", Value="4"}
+                        }, "--select--", new { @class = "form-control" })
+                </td>
+                <td>
+                    @Html.DropDownList("dlSosStatus", new List<SelectListItem>()
+                        {
+                            new SelectListItem { Text = "Open", Value = "1" },
+                            new SelectListItem { Text = "Closed", Value = "2" },
+                            new SelectListItem { Text = "OnTrack", Value = "3" }
+                        }, "--select--", new { @class = "form-control" })
+                </td>
+                <td><input type="button" value="Clear Selection" class="btn btn-default active" onclick="ClearSelectFilters();" /></td>
+            </tr>
+        </table>
+    </div>
+    @Html.Partial("_DependencyList", Model.StoryDependencyList)
+</div>
+<br /><br />
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/Scripts/jira_bundle")
+    <script type="text/javascript">
+        function StoreFilter() {
+            this.get = function (name) {
+                return JSON.parse(window.localStorage.getItem(name));
+            };
+            this.set = function (name, value) {
+                window.localStorage.setItem(name, JSON.stringify(value));
+            };
+            this.clear = function () {
+                window.localStorage.clear();
+            };
+        }
+    </script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#submitBtn').attr('disabled', 'disabled');
+            BindRejectDependency();
+            BindAcceptDependency();
+            BindEditDependency();
+            BindOwnDependency();
+
+            //$(".requestListCont").find("td[colspan=13]").find("p").hide();
+
+            var store = new StoreFilter();
+            var fromTeamValPref, toTeamValPref, statusPref, needBySprintValPref, SosStatusPref;
+
+            $(".requestListCont").on("click", ".dependency-story-SOSComment-button", function (e) {
+                var storyId = $(this).attr("id");
+                var comment = $(this).parent().find("textarea").val();
+                params = { storyDependencyId: storyId, SoScomment: comment };
+                $.ajax({
+                    type: "POST",
+                    url: '/Home/UpdateSoS',
+                    data: params,
+                    success: function (data) {
+                        if (data == "True") {
+                            //alert(data.BlockedStory);
+                            //$('td[data-blockedstoryid=' + data.BlockedStory + ']').html('<p>' + data.BlockedStorySprint + '<br/>Jira Status : ' + data.BlockedStoryStatus + '</p>').fadeIn('slow');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                        PrintToConsole(true, verr);
+                    },
+                    complete: function () {
+                        //if (loader != null) {
+                        //    loader.hide();
+                    }
+
+                });
+            });
+
+            $(".requestListCont").on("change", ".blocked-story-NeedBySprint", function (e) {
+                var storyId = $(this).attr("id");
+                var NeedBySprint = $(this).val();
+                params = { storyDependencyId: storyId, Sprint: NeedBySprint };
+                $.ajax({
+                    type: "POST",
+                    url: '/Home/UpdateNeedBySprint',
+                    data: params,
+                    success: function (data) {
+                        if (data == "True") {
+                            //alert(data.BlockedStory);
+                            //$('td[data-blockedstoryid=' + data.BlockedStory + ']').html('<p>' + data.BlockedStorySprint + '<br/>Jira Status : ' + data.BlockedStoryStatus + '</p>').fadeIn('slow');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                        PrintToConsole(true, verr);
+                    },
+                    complete: function () {
+                        //if (loader != null) {
+                        //    loader.hide();
+                    }
+                })
+            });
+
+            $(".requestListCont").on("change", ".dependency-story-SOSStatus", function (e) {
+                var storyId = $(this).attr("id");
+                var SosStatus = $(this).val();
+                params = { storyDependencyId: storyId, SoSstatus: SosStatus };
+                $.ajax({
+                    type: "POST",
+                    url: '/Home/UpdateSoS',
+                    data: params,
+                    success: function (data) {
+                        if (data == "True") {
+                            //alert(data.BlockedStory);
+                            //$('td[data-blockedstoryid=' + data.BlockedStory + ']').html('<p>' + data.BlockedStorySprint + '<br/>Jira Status : ' + data.BlockedStoryStatus + '</p>').fadeIn('slow');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                        PrintToConsole(true, verr);
+                    },
+                    complete: function () {
+                        //if (loader != null) {
+                        //    loader.hide();
+                    }
+
+                });
+            });
+
+            $("#dlSosStatus").change(function () {
+                var fromTeamVal = $('select[name=dlFromTeamId]').val(),
+                   toTeamVal = $('select[name=dlToTeamId]').val(),
+                   status = $('select[name=dlstatus]').val(),
+                   needBySprintVal = $('select[name=dlNeedBySprintId]').val(),
+                   SosStatus = $('select[name=dlSosStatus]').val();
+
+                store.set("fromTeam", fromTeamVal);
+                store.set("toTeam", toTeamVal);
+                store.set("status", status);
+                store.set("needbysprint", needBySprintVal);
+                store.set("sosstatus", SosStatus);
+                FetchFilteredData(fromTeamVal, toTeamVal, status, needBySprintVal, SosStatus);
+            });
+
+            $("#dlToTeamId").change(function () {
+                var fromTeamVal = $('select[name=dlFromTeamId]').val(),
+                   toTeamVal = $('select[name=dlToTeamId]').val(),
+                    status = $('select[name=dlstatus]').val(),
+                   needBySprintVal = $('select[name=dlNeedBySprintId]').val(),
+                SosStatus = $('select[name=dlSosStatus]').val();
+
+                store.set("fromTeam", fromTeamVal);
+                store.set("toTeam", toTeamVal);
+                store.set("status", status);
+                store.set("needbysprint", needBySprintVal);
+                store.set("sosstatus", SosStatus);
+                FetchFilteredData(fromTeamVal, toTeamVal, status, needBySprintVal, SosStatus);
+            });
+
+            $("#dlFromTeamId").change(function () {
+                var fromTeamVal = $('select[name=dlFromTeamId]').val(),
+                   toTeamVal = $('select[name=dlToTeamId]').val(),
+                status = $('select[name=dlstatus]').val(),
+                   needBySprintVal = $('select[name=dlNeedBySprintId]').val(),
+                   SosStatus = $('select[name=dlSosStatus]').val();
+
+                store.set("fromTeam", fromTeamVal);
+                store.set("toTeam", toTeamVal);
+                store.set("status", status);
+                store.set("needbysprint", needBySprintVal);
+                store.set("sosstatus", SosStatus);
+                FetchFilteredData(fromTeamVal, toTeamVal, status, needBySprintVal, SosStatus);
+            });
+
+            $("#dlstatus").change(function () {
+                var fromTeamVal = $('select[name=dlFromTeamId]').val(),
+                   toTeamVal = $('select[name=dlToTeamId]').val(),
+                   status = $('select[name=dlstatus]').val(),
+                   needBySprintVal = $('select[name=dlNeedBySprintId]').val(),
+                   SosStatus = $('select[name=dlSosStatus]').val();
+
+                store.set("fromTeam", fromTeamVal);
+                store.set("toTeam", toTeamVal);
+                store.set("status", status);
+                store.set("needbysprint", needBySprintVal);
+                store.set("sosstatus", SosStatus);
+                FetchFilteredData(fromTeamVal, toTeamVal, status, needBySprintVal, SosStatus);
+            });
+
+            $("#dlNeedBySprintId").change(function () {
+                var fromTeamVal = $('select[name=dlFromTeamId]').val(),
+                   toTeamVal = $('select[name=dlToTeamId]').val(),
+                   status = $('select[name=dlstatus]').val(),
+                   needBySprintVal = $('select[name=dlNeedBySprintId]').val(),
+                   SosStatus = $('select[name=dlSosStatus]').val();
+
+                store.set("fromTeam", fromTeamVal);
+                store.set("toTeam", toTeamVal);
+                store.set("status", status);
+                store.set("needbysprint", needBySprintVal);
+                store.set("sosstatus", SosStatus);
+                FetchFilteredData(fromTeamVal, toTeamVal, status, needBySprintVal, SosStatus);
+            });
+
+            ClearRequestForm();
+            fromTeamValPref = store.get("fromTeam");
+            toTeamValPref = store.get("toTeam");
+            statusPref = store.get("status");
+            needBySprintValPref = store.get("needbysprint");
+            SosStatusPref = store.get("sosstatus");
+            $('#dlToTeamId').val(toTeamValPref);
+            $('#dlFromTeamId').val(fromTeamValPref);
+            $('#dlstatus').val(statusPref);
+            $('#dlNeedBySprintId').val(needBySprintValPref);
+            $('#dlSosStatus').val(SosStatusPref);
+            FetchFilteredData(fromTeamValPref, toTeamValPref, statusPref, needBySprintValPref, SosStatusPref); //extra call, it solves the purspose of localstored values
+            setInterval("FetchFilteredData()", 120000);
+        });
+
+        function FetchExtendedFieldsData() {
+            var obj = $("td.blocked-story-Sprint[data-blockedstoryid]");
+            $.each(obj, function (key, element) {
+                var blockedStoryId = $(element).attr("data-blockedstoryid");
+                var dependencyStoryId;
+                if ((blockedStoryId != null && blockedStoryId.length > 0) || (dependencyStoryId != null && dependencyStoryId.length > 0)) {
+                    params = { BlockedStoryId: blockedStoryId, storyDependencyId: dependencyStoryId };
+                    $.ajax({
+                        type: "GET",
+                        url: '/Home/GetExtendedFields',
+                        data: params,
+                        success: function (data) {
+                            if (data != undefined && data.Success === true) {
+                                //alert(data.BlockedStory);
+                                $('td[data-blockedstoryid=' + data.BlockedStory + ']').html('<p>' + data.BlockedStorySprint + '<br/>Jira Status : ' + data.BlockedStoryStatus + '</p>').fadeIn('slow');
+
+                                //if ($(element).attr('data-blockedstoryid') == data.BlockedStory)
+                                //{
+                                //    //alert($(element).attr('data-blockedstoryid'));
+                                //    //alert('updating for :' + key + ' with story id = ' + $(element).attr('data-blockedstoryid') + ' I will update it to ' +  data.BlockedStorySprint);
+                                //    //PrintToConsole(true, $(element));
+                                //    $(element).html(data.BlockedStorySprint).fadeIn('slow');
+                                //}
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                            PrintToConsole(true, verr);
+                        },
+                        complete: function () {
+                            //if (loader != null) {
+                            //    loader.hide();
+                        }
+
+                    });
+                }
+            });
+            //now loop through for dependency stories
+            var objdep = $(".dependency-story-Sprint");
+            $.each(objdep, function (key, element) {
+                var blockedStoryId;
+                var dependencyStoryId = $(element).attr("data-storydependencyid");
+                if ((blockedStoryId != null && blockedStoryId.length > 0) || (dependencyStoryId != null && dependencyStoryId.length > 0)) {
+                    params = { BlockedStoryId: blockedStoryId, storyDependencyId: dependencyStoryId };
+                    $.ajax({
+                        type: "GET",
+                        url: '/Home/GetExtendedFields',
+                        data: params,
+                        success: function (data) {
+                            if (data != undefined && data.Success === true) {
+                                $('td[data-storydependencyid=' + data.StoryDependencyId + ']').html('<p>' + data.DependencyStorySprint + '<br/>Jira Status : ' + data.DependencyStoryStatus + '</p>').fadeIn('slow');
+                                //$(".dependency-story-Sprint").html(data.DependencyStorySprint).fadeIn('slow');
+                                //$(".dependency-story-Status").html(data.DependencyStoryStatus).fadeIn('slow');
+                                //var sprintBlockedStory = $(element).closest("tr").find("td.blocked-story-Sprint").text();
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                            PrintToConsole(true, verr);
+                        },
+                        complete: function () {
+                            //if (loader != null) {
+                            //    loader.hide();
+                        }
+
+                    });
+                }
+            });
+        }
+
+        function FetchFilteredData(fromTeamVal, toTeamVal, status, needBySprintVal, SosStatus) {
+            var store = new StoreFilter();
+            fromTeamVal = store.get("fromTeam");
+            toTeamVal = store.get("toTeam");
+            status = store.get("status");
+            needBySprintVal = store.get("needbysprint");
+            sosStatus = store.get("sosstatus");
+            PrintToConsole(true, "SosStatus = " + sosStatus);
+
+            $('#dlToTeamId').val(toTeamVal);
+            $('#dlFromTeamId').val(fromTeamVal);
+            $('#dlstatus').val(status);
+            $('#dlNeedBySprintId').val(needBySprintVal);
+            $('#dlSosStatus').val(SosStatus);
+            var reqListCont = $(".requestListCont");
+            var params = { fromTeamId: fromTeamVal, toTeamId: toTeamVal, status: status, needBySprintId: needBySprintVal, SosStatus: sosStatus };
+            $.ajax({
+                type: "POST",
+                url: '/Home/FilterDependency',
+                data: params,
+                success: function (data) {
+                    if ($.trim(data) != "") {
+                        reqListCont.html(data).fadeIn('slow');
+                    }
+                    // bindLoadMoreComments(commentCont, itemid, itemCategoryId);
+                    // if (loader != null) { loader.hide(); }
+                },
+                error: function (xhr, status, error) {
+                    var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                    PrintToConsole(true, verr);
+                },
+                complete: function () {
+                    //if (loader != null) {
+                    //    loader.hide();
+                }
+
+            });
+            FetchExtendedFieldsData();
+        }
+
+        function BindEditDependency() {
+            $(".requestListCont").on("click", "a.Edit_Link", function (e) {
+                e.preventDefault();
+                var thisLink = $(this),
+                    storyId = thisLink.attr("data-storydependencyid"),
+                    dependecyReqForm = $("#RequestSaveForm"),
+                    params = { storyDependencyId: storyId };
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Home/EditDependency',
+                    data: params,
+                    success: function (data) {
+                        if (data != undefined && data.Success === true) {
+                            $("#StoryDependencyId", dependecyReqForm).val(data.StoryDependencyId);
+                            $("#ToTeamId", dependecyReqForm).val(data.ToTeamId);
+                            $("#NeedBySprintId", dependecyReqForm).val(data.NeedBySprintId);
+                            $("#Description", dependecyReqForm).val(data.Description);
+                            $("#Detail", dependecyReqForm).val(data.Detail);
+                            $("#BlockedStory", dependecyReqForm).val(data.BlockedStory);
+                            $("#DependencyStory", dependecyReqForm).val(data.DependencyStory);
+                            $("#FromTeamId", dependecyReqForm).val(data.FromTeamId).focus();
+                            $("#submitBtn", dependecyReqForm).prop('value', 'Save');
+                        }
+                        else {
+                            alert("Error Editing! Please Refresh and Try");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                        PrintToConsole(true, verr);
+                    }
+                });
+            });
+        }
+
+
+        function ClearRequestForm() {
+            var dependecyReqForm = $("#RequestSaveForm");
+            dependecyReqForm.find('input:text, select, textarea').val('');
+            $("#submitBtn", dependecyReqForm).prop('value', 'Create');
+        }
+
+        function ClearSelectFilters() {
+            $('#dlFromTeamId').val('');
+            $('#dlToTeamId').val('');
+            $('#dlstatus').val('');
+            $('#dlNeedBySprintId').val('');
+            $('#dlSosStatus').val('');
+            var store = new StoreFilter();
+            store.clear();
+            FetchFilteredData();
+        }
+
+        function checkStoryKeyValidity() {
+            var storyKey = $('#BlockedStory').val();
+            params = { storyKey: storyKey };
+            $.ajax({
+                type: "POST",
+                url: '/Home/CheckStoryKeyValidity',
+                data: params,
+                success: function (data) {
+                    if (data == "True") {
+                        $('#submitBtn').removeAttr('disabled');
+                    }
+                    if (data == "False") {
+                        alert("Invalid Story Key, Please enter a valid Jira Story Key.");
+                        $('#BlockedStory').focus();
+                        $('#submitBtn').attr('disabled', 'disabled');
+                    }
+                    // if (loader != null) { loader.hide(); }
+                },
+                error: function (xhr, status, error) {
+                    var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                    PrintToConsole(true, verr);
+                },
+                complete: function () {
+                    //if (loader != null) {
+                    //    loader.hide();
+                }
+
+            });
+        }
+
+        function checkExistingStoryKeyValidity() {
+            var dialog = $("#AcceptStory.ModelWrapper");
+            storyKey = dialog.find("#dependencyStoryNumber").val();
+            params = { storyKey: storyKey };
+            $.ajax({
+                type: "POST",
+                url: '/Home/CheckStoryKeyValidity',
+                data: params,
+                success: function (data) {
+                    if (data == "True") {
+                        dialog.find("#submit_acceptstory").removeAttr('disabled');
+                    }
+                    if (data == "False") {
+                        alert("Invalid Story Key, Please enter a valid Jira Story Key.");
+                        dialog.find("#dependencyStoryNumber").focus();
+                        dialog.find("#submit_acceptstory").attr('disabled', 'disabled');
+                    }
+                    // if (loader != null) { loader.hide(); }
+                },
+                error: function (xhr, status, error) {
+                    var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                    PrintToConsole(true, verr);
+                },
+                complete: function () {
+                    //if (loader != null) {
+                    //    loader.hide();
+                }
+
+            });
+        }
+
+        function BindRejectDependency() {
+            var dialog = $("#RejectStory.ModelWrapper");
+            $(".requestListCont").on("click", "a.AskReason_Link", function (e) {
+                e.preventDefault();
+                var thislink = $(this),
+                    newRevRow = $("#reject-reason"),
+                    storyId = thislink.attr("data-storydependencyid");
+                showCustomDialog(dialog);
+                newRevRow.find("#reviewComment").attr("data-storydependencyid", storyId).focus();
+                newRevRow.find("#reviewComment").val("Please specify a reason for rejection");
+                newRevRow.find("#reviewComment").select();
+            });
+
+            $("a.Cancel_Link").click(function e() {
+                var newRevRow = $("#reject-reason");
+                newRevRow.find("#reviewComment").val("");
+                hideCustomDialog(dialog);
+            });
+
+            $("a.Reject_Link").click(function (e) {
+                e.preventDefault();
+                var thisLink = $(this),
+                    newRevCmt = $("#reject-reason").find("#reviewComment"),
+                    storyId = newRevCmt.attr("data-storydependencyid"),
+                    review = newRevCmt.val(),
+                    params = { storyDependencyId: storyId, Reason: review };
+
+                $.ajax({
+                    type: 'POST',
+                    url: $(this)[0].href,
+                    data: params,
+                    success: function (data) {
+                        if (data == "True") {
+                            //var element = $(".requestListCont").find("a[data-storydependencyid='" + storyId + "']");
+                            //element.parent("span").parent(".action-request-status").html("<span class='rejected'> Rejected  <a href='#' data-storydependencyid="
+                            //    + storyId + " class='Edit_Link'><img src='/Content/edit-iphone.png' /></a>");
+                            //newRevCmt.find("#reviewComment").val("");
+                            hideCustomDialog(dialog);
+                            FetchFilteredData();
+                        }
+                        else {
+                            alert("Error Rejecting! Please refresh and try again.");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                        PrintToConsole(true, verr);
+                    }
+                });
+            });
+        }
+
+        function BindOwnDependency() {
+            var dialog = $("#OwnStory.ModelWrapper"),
+            acceptlink,
+            acceptresult = $("#copyresult", dialog)
+            acceptwrapper = $("#CopyOptionsWrapper", dialog),
+            loader = $("#ActionLoading", dialog);
+            $(".requestListCont").on("click", "a.own_link", function (e) {
+                e.preventDefault();
+                acceptlink = $(this),
+                storyId = acceptlink.attr("data-storydependencyid");
+                showCustomDialog(dialog);
+                $("#OwnOptionsWrapper", dialog).attr("data-storydependencyid", storyId);
+                $("#Ownername", dialog).focus();
+            });
+
+            $(dialog).on("click", "#submit_own_dependency", function (e) {
+                e.preventDefault();
+                var ownerName = $("#Ownername", dialog).val();
+                if (ownerName.length > 0) {
+                    var storyId = $("#OwnOptionsWrapper", dialog).attr("data-storydependencyid"),
+                     params = { storyDependencyId: storyId, OwnerName: ownerName };
+                    $.ajax({
+                        type: 'POST',
+                        url: '/Home/OwnExistingDependency',
+                        data: params,
+                        success: function (data) {
+                            if (data == "True") {
+                                acceptlink.parent("span").parent(".action-request-status").html("<strong>Owned by </strong>");
+                                acceptlink.parent("span").parent(".action-request-status").parent("td").parent("tr").find(".dependency-story").html("Owned by: " + ownerName);
+                                clearAcceptDialog(dialog);
+                            }
+                            else {
+                                alert("Error Accepting! Refresh and Try Again");
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                            PrintToConsole(true, verr);
+                        }
+                    });
+                }
+                else {
+                    alert("Please enter your name.");
+                    $("#Ownername", dialog).focus();
+                }
+            });
+
+            $(dialog).on("click", "#submit_cancel", function (e) {
+                e.preventDefault();
+                clearAcceptDialog(dialog);
+            });
+
+        }
+        function BindAcceptDependency() {
+            var dialog = $("#AcceptStory.ModelWrapper"),
+            acceptlink,
+            acceptresult = $("#copyresult", dialog)
+            acceptwrapper = $("#CopyOptionsWrapper", dialog),
+            loader = $("#ActionLoading", dialog);
+            $(".requestListCont").on("click", "a.Accept_Link", function (e) {
+                e.preventDefault();
+                acceptlink = $(this),
+                storyId = acceptlink.attr("data-storydependencyid");
+                showCustomDialog(dialog);
+                $("#AcceptOptionsWrapper", dialog).attr("data-storydependencyid", storyId);
+                $("#dependencyStoryNumber", dialog).focus();
+            });
+            dialog.find("#submit_acceptstory").attr('disabled', 'disabled');
+            $(dialog).on("click", "#submit_acceptstory", function (e) {
+                e.preventDefault();
+                var storyNum = $("#dependencyStoryNumber", dialog).val();
+                if (storyNum.length > 0) {
+                    var storyId = $("#AcceptOptionsWrapper", dialog).attr("data-storydependencyid"),
+                     params = { storyDependencyId: storyId, dependencyStoryNumber: storyNum };
+                    $.ajax({
+                        type: 'POST',
+                        url: '/Home/AcceptExistingDependency',
+                        data: params,
+                        success: function (data) {
+                            if (data == "True") {
+                                //acceptlink.parent("span").parent(".action-request-status").html("<strong>Accepted</strong>");
+                                //var td = acceptlink.parent("span").parent(".action-request-status").parent("td").parent("tr").find(".dependency-story");
+                                //"<a target='_blank' href='https://jira.ges.symantec.com/browse/'" + storyNum + "'>" + storyNum + "</a>");
+                                //acceptlink.parent("span").parent(".action-request-status").parent("td").parent("tr").find(".dependency-story").html(storyNum);
+                                clearAcceptDialog(dialog);
+                                FetchFilteredData();
+
+                            }
+                            else {
+                                alert("Error Accepting! Refresh and Try Again");
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                            PrintToConsole(true, verr);
+                        }
+                    });
+                }
+                else {
+                    alert("Please enter Story Number");
+                    $("#dependencyStoryNumber", dialog).focus();
+                }
+            });
+
+            $(dialog).on("click", "#submit_acceptnewstory", function (e) {
+                e.preventDefault();
+                var storyId = $("#AcceptOptionsWrapper", dialog).attr("data-storydependencyid"),
+                     params = { storyDependencyId: storyId };
+                $.ajax({
+                    type: 'POST',
+                    url: '/Home/AcceptDependency',
+                    data: params,
+                    success: function (data) {
+                        if (data == "True") {
+                            //acceptlink.parent("span").parent(".action-request-status").html("<strong>Accepted</strong>");
+                            clearAcceptDialog(dialog);
+                            FetchFilteredData();
+                        }
+                        else {
+                            alert("Error Accepting! Refresh and Try Again");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                        PrintToConsole(true, verr);
+                    }
+                });
+            });
+
+            $(dialog).on("click", "#submit_cancel", function (e) {
+                e.preventDefault();
+                clearAcceptDialog(dialog);
+            });
+        }
+
+        function clearAcceptDialog(dialog) {
+            $("#dependencyStoryNumber", dialog).val("");
+            $("#AcceptOptionsWrapper", dialog).attr("data-storydependencyid", "");
+            $("#ExistingStory", dialog).hide();
+            $("#newStory", dialog).hide();
+            hideCustomDialog(dialog);
+        }
+
+        //function BindAcceptDependency() {
+        //    $(".requestListCont").on("click", "a.Accept_Link", function (e) {
+        //        e.preventDefault();
+        //        var thisLink = $(this),
+        //             storyId = thisLink.attr("data-storydependencyid"),
+        //             params = { storyDependencyId: storyId };
+        //        $.ajax({
+        //            type: 'POST',
+        //            url: $(this)[0].href,
+        //            data: params,
+        //            success: function (data) {
+        //                if (data == "True") {
+        //                    location.reload();
+        //                    //thisLink.parent("span").parent(".action-request-status").html("<strong>Accepted</strong>");
+        //                }
+        //                if (data == "False") {
+        //                    alert("Error Accepting! Refresh and Try Again");
+        //                }
+        //            },
+        //            error: function (xhr, status, error) {
+        //                var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+        //                PrintToConsole(true, verr);
+        //            }
+        //        });
+        //    });
+        //}
+
+        function PrintToConsole(isDebug, data) {
+            if (isDebug)
+            { console.trace(data); }
+        }
+
+        function IhaveaStory() {
+            var dialog = $("#AcceptStory.ModelWrapper");
+            $("#ExistingStory", dialog).show();
+            $("#newStory", dialog).hide();
+        }
+        function NewStory() {
+            var dialog = $("#AcceptStory.ModelWrapper");
+            $("#newStory", dialog).show();
+            $("#ExistingStory", dialog).hide();
+        }
+
+    </script>
+}

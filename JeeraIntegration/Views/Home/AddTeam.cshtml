@@ -1,0 +1,114 @@
+﻿@model JiraIntegration.Models.TeamViewModel
+
+
+@{
+    ViewBag.Title = "Manage Teams";
+}
+
+<h2>Manage Teams</h2>
+
+
+@using (Html.BeginForm("AddTeam", "Home",
+       null, FormMethod.Post,
+        new { @id = "TeamSaveForm", @class = "form-horizontal", role = "form" }))
+{
+    @Html.AntiForgeryToken()
+    
+    <div class="form-horizontal">
+        <h4>New Team</h4>
+        <hr />
+        @Html.ValidationSummary(true)
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.TeamName, new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.TeamName)
+                @Html.ValidationMessageFor(model => model.TeamName)
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.IsStarTeam, new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.IsStarTeam)
+                @Html.ValidationMessageFor(model => model.IsStarTeam)
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Create" class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+}
+
+<h2>All Teams</h2>
+
+<div>
+    <ul>
+        <li>
+                <span> Team Id</span>
+                <span>Team Name</span>
+                <span>Is star Team?</span>
+        </li>
+        @foreach (var item in Model.Teames)
+        {
+            <li>
+                <span class="read-more">
+                    @item.TeamId
+                </span>
+                <span class="read-more">
+                    @item.TeamName
+                </span>
+                <span class="read-more">
+                    @if (item.IsStarTeam)
+                    {
+                        <span>Yes</span>
+                    }
+                    else
+                    {
+                        <span>No</span>
+                    }
+                </span>
+                <span>
+                    @Html.ActionLink("Remove", "DeletedTeam"
+                    , new { teamId = item.TeamId }, new { @class = "Remove_Link" })
+                </span>
+            </li>
+        }
+    </ul>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+<script type="text/javascript">
+    $(document).ready(function () {        
+        BindRemoveTeam();
+    });
+
+    function BindRemoveTeam() {
+        $("a.Remove_Link").bind("click", function (e) {
+            e.preventDefault();
+            var parentLi = $(this).parents("li");
+            $.ajax({
+                type: 'POST',
+                url: $(this)[0].href,
+                success: function (data) {
+                    if (data == "True") {
+                        parentLi.remove();
+                    }
+                    else {
+                        alert("Record not Deleted");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                    alert(verr);
+                }
+            });
+        });
+    }
+</script>
+
+}

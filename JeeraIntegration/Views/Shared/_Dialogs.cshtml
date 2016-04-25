@@ -1,0 +1,86 @@
+﻿<div id="AcceptStory" class="ModelWrapper fixHeight">
+    <div class="model wide">
+        <div class="topinfo">
+            <a class="close" href="#" title="Close"></a>
+            <h1 class="title deleteImg"><em></em>Accept Dependency</h1>
+        </div>
+        <div id="AcceptOptionsWrapper" class="main-contents">
+            <img src="~/Content/I_already_have_a_Story_button.png" onclick="IhaveaStory()"/>
+            <p id="ExistingStory" class="noDisplay">
+                <!--onblur="checkExistingStoryKeyValidity()"-->
+                <span>Story Number: <input type='text' maxlength="20" name='dependencyStoryNumber' id='dependencyStoryNumber' onblur="checkExistingStoryKeyValidity()"></span>
+                <input type='button' name='submit_acceptstory' id='submit_acceptstory' class="btn" value='Accept Exisitng Story'>
+
+            </p>
+
+            <br /> <br />
+            <p>
+                <input style="background-image: url('../../Content/Create_a_story_and_accept_button.png'); width:265px" type='button' name='submit_acceptnewstory' id='submit_acceptnewstory' class="btn">
+                <br /><br /><br />
+                <input type='button' style="background-color:indianred;color:black" name='cancel' id='submit_cancel' class="btn btn-active" value='Cancel'>
+            </p>
+            <br /><br />
+            
+        </div>
+        <div id="actionresult" class="noDisplay">
+
+        </div>
+        <div id="ActionLoading"></div>
+    </div>
+    <div class="OverlayMask">
+    </div>
+</div>
+
+<div id="RejectStory" class="ModelWrapper fixHeight">
+    <div class="model wide">
+        <div class="topinfo">
+            <a class="close" href="#" title="Close"></a>
+            <h1 class="title deleteImg"><em></em>Reject Dependency</h1>
+        </div>
+        <div id="RejectOptionsWrapper" class="main-contents">
+            <div id="reject-reason">
+                <div>
+                    @Html.TextArea("reviewComment", string.Empty, new { @cols = "100", @rows = "4", @maxlength = 500 })
+                </div>
+                <div>
+                    @Html.ActionLink("Reject", "RejectDependency", null
+            , new { @class = "Reject_Link" }) |
+                    <a href="#" class="Cancel_Link">Cancel</a>
+                    @*@Html.ActionLink("Cancel", "Cancel", null, new { @class = "Cancel_Link" })*@
+                </div>
+            </div>
+        </div>
+        <div id="actionresult" class="noDisplay">
+
+        </div>
+        <div id="ActionLoading"></div>
+    </div>
+    <div class="OverlayMask">
+    </div>
+</div>
+
+<div id="OwnStory" class="ModelWrapper fixHeight">
+    <div class="model wide">
+        <div class="topinfo">
+            <a class="close" href="#" title="Close"></a>
+            <h1 class="title deleteImg"><em></em>Own Dependency</h1>
+        </div>
+        <div id="OwnOptionsWrapper" class="main-contents">
+            <div id="dependency-owner">
+                <div>
+                    @Html.TextBox("Ownername", string.Empty)
+                </div>
+                <div>
+                    <input type='button' name='submit_own_dependency' id='submit_own_dependency' class="btn" value='Own Dependency'> |
+                    <a href="#" class="Cancel_Link">Cancel</a>
+                </div>
+            </div>
+        </div>
+        <div id="actionresult" class="noDisplay">
+
+        </div>
+        <div id="ActionLoading"></div>
+    </div>
+    <div class="OverlayMask">
+    </div>
+</div>

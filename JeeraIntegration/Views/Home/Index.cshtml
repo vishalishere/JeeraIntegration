@@ -1,0 +1,40 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="jumbotron">
+    <table>
+        <tr>
+            <td>
+                <img src="~/Content/Team.png"/>
+            </td>
+            <td>
+                <h2>STAR Client Teams PI Planning</h2>
+                <p class="lead">This tool will allow you to easily capture, request and manage cross team dependecies that your team identifies during the PI planning</p>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h2>Getting started</h2>
+        <p>
+            Jira Dependency Manager gives you a easy way to capture, and request dependeicies 
+            and gives you full control over inward and outgoing dependency requests for a better PI planning.
+        </p>
+        <br />
+        <p>@Html.ActionLink("Request Dependency", "RequestDependency", "Home", null, new { @class = "btn btn-default" })</p>
+    </div>
+    <div class="col-md-4">
+        <h2>Provide Feedback</h2>
+        <p>Your feedback is important, if you like to request a change to this tool or would a like to see a new feature added,
+         that makes it easy to manage dependencies, or would want to give your feedback in general please use the link below.</p>
+        <p><a class="btn btn-default" href="http://www.google.com/moderator/#16/e=218a45" target="_blank">Provide Feedback &raquo;</a></p>
+    </div>
+    @*<div class="col-md-4">
+        <h2>Web Hosting</h2>
+        <p>You can easily find a web hosting company that offers the right mix of features and price for your applications.</p>
+        <p><a class="btn btn-default" href="http://go.microsoft.com/fwlink/?LinkId=301867">Learn more &raquo;</a></p>
+    </div>*@
+</div>

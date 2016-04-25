@@ -1,0 +1,62 @@
+﻿@model JiraIntegration.Models.RequestDependencyViewModel
+@using JiraIntegration.Entities
+
+@{
+    ViewBag.Title = "Dependency List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Dependency List</h2>
+@Html.Partial("_DependencyList", Model.StoryDependencyList)
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/Scripts/jira_bundle")
+<script type="text/javascript">
+    $(document).ready(function () {
+        setInterval("FetchFilteredData()", 20000);
+    });
+
+    function StoreFilter() {
+        this.get = function (name) {
+            return JSON.parse(window.localStorage.getItem(name));
+        };
+        this.set = function (name, value) {
+            window.localStorage.setItem(name, JSON.stringify(value));
+        };
+        this.clear = function () {
+            window.localStorage.clear();
+        };
+    }
+    function FetchFilteredData(fromTeamVal, toTeamVal, status) {
+        var store = new StoreFilter();
+        fromTeamVal = store.get("fromTeam");
+        toTeamVal = store.get("toTeam");
+        status = store.get("status");
+
+        var reqListCont = $(".requestListCont"),
+        params = { fromTeamId: null, toTeamId: null, status: null};
+        $.ajax({
+            type: "POST",
+            url: '/Home/FilterDependency',
+            data: params,
+            success: function (data) {
+                if ($.trim(data) != "") {
+                    reqListCont.html(data).fadeIn('slow');
+                }
+                // bindLoadMoreComments(commentCont, itemid, itemCategoryId);
+                // if (loader != null) { loader.hide(); }
+            },
+            error: function (xhr, status, error) {
+                var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                PrintToConsole(true, verr);
+            },
+            complete: function () {
+                //if (loader != null) {
+                //    loader.hide();
+            }
+
+        });
+    }
+</script>
+}

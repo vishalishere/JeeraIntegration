@@ -1,0 +1,136 @@
+﻿@model JiraIntegration.Models.ReportingViewModel
+@using JiraIntegration.Entities
+@{
+    ViewBag.Title = "STAR Client PI reporting";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Reporting</h2>
+
+<input type="button" value="Take Snapshot and Report" onclick="TakeJiraSnapShot();" />
+@*<input type="button" value="Create Baseline" onclick="CreateBaseLine();" />*@
+<br />
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Planned points</th>
+            <th>Total Current Points</th>
+            <th>Points Closed</th>
+        </tr>
+    </thead>
+    @if (Model.BaselinePlannedPoints != null && Model.SnapshotList != null)
+    {
+        foreach (var item in Model.SnapshotList)
+        {
+            <tr>
+                <td style="width: 100px;">
+                    @item.SnapshotDate
+                </td>
+                <td style="width: 100px;">
+                    @Model.BaselinePlannedPoints
+                </td>
+                <td style="width: 100px;">
+                    @item.TotalCurrentPoints
+                </td>
+                <td style="width: 100px;">
+                    @item.TotalClosedPoints
+                </td>
+            </tr>
+        }
+    }
+</table>
+<div id="releaseburnupChart"></div>
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/Scripts/charts")
+    @Scripts.Render("~/Scripts/highcharts/")
+
+    @Html.Partial("_ReleaseBurnupChart", Model)
+
+    @*<script type="text/javascript">
+            var a = [];
+            @foreach (var item in Model.SnapshotList)
+                 {
+             <text>
+            a.push({id:@item.SnapShotNumber, totalCurrentPoints:@item.TotalCurrentPoints, totalClosedPoints:@item.TotalClosedPoints, baselinePlannedPoints:@Model.BaselinePlannedPoints, SnapshotDate:@item.SnapshotDate });
+            </text>
+                 }
+            console.log(a);
+           new Morris.Line({
+                // ID of the element in which to draw the chart.
+                element: 'releaseburnupChart',
+                resize:'true',
+                // Chart data records -- each entry in this array corresponds to a point on
+                // the chart.
+                data: a,
+                // The name of the data record attribute that contains x-values.
+                xkey: 'SnapshotDate',
+                // A list of names of data record attributes that contain y-values.
+                ykeys: ['totalCurrentPoints','baselinePlannedPoints', 'totalClosedPoints'],
+                // Labels for the ykeys -- will be displayed when you hover over the
+                // chart.
+                labels: ['totalCurrentPoints','baselinePlannedPoints', 'totalClosedPoints'],
+                //xLabels:"day",
+                parseTime: true,
+                lineColors:['#d62d20','#0057e7','#008744'],
+                smooth:true,
+                hideHover:'true',
+                //axes:'true',
+                goals:[@Model.BaselinePlannedPoints],
+                continuousLine: false
+            });
+        </script>*@
+    <script type="text/javascript">
+        function CreateBaseLine() {
+            $.ajax({
+                type: "POST",
+                url: '/Home/CreateBaseLine',
+                success: function (data) {
+                    if ($.trim(data) != "") {
+                        alert(data);
+                        //reqListCont.html(data).fadeIn('slow');
+                    }
+                    // bindLoadMoreComments(commentCont, itemid, itemCategoryId);
+                    // if (loader != null) { loader.hide(); }
+                },
+                error: function (xhr, status, error) {
+                    var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                    PrintToConsole(true, verr);
+                },
+                complete: function () {
+                    //if (loader != null) {
+                    //    loader.hide();
+                }
+
+            });
+            //FetchExtendedFieldsData();
+            //CreateReport();
+        }
+        function TakeJiraSnapShot() {
+            $.ajax({
+                type: "POST",
+                url: '/Home/TakeJiraSnapShot',
+                success: function (data) {
+                    if ($.trim(data) != "") {
+                        alert(data);
+                        //reqListCont.html(data).fadeIn('slow');
+                    }
+                    // bindLoadMoreComments(commentCont, itemid, itemCategoryId);
+                    // if (loader != null) { loader.hide(); }
+                },
+                error: function (xhr, status, error) {
+                    var verr = xhr.status + "\r\n" + status + "\r\n" + error;
+                    PrintToConsole(true, verr);
+                },
+                complete: function () {
+                    //if (loader != null) {
+                    //    loader.hide();
+                }
+
+            });
+            //FetchExtendedFieldsData();
+            //CreateReport();
+        }
+    </script>
+}
