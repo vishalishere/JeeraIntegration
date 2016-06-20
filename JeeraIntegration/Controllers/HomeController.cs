@@ -33,7 +33,8 @@ namespace JiraIntegration.Controllers
 {
     public class HomeController : Controller
     {
-        private const string jiraRestApiUrl = "https://jira.ges.symantec.com/rest/api/2/";
+        //private const string jiraRestApiUrl = "https://jira.ges.symantec.com/rest/api/2/";
+        private const string jiraRestApiUrl = "https://jira-dev.ges.symantec.com/rest/api/2/";
         private const string jiraUsername = "Star_JiraAPI";
         private const string jiraPassword = "Symantec@1234";
         private const string JiraCreateIssueResource = "issue";
@@ -724,6 +725,7 @@ namespace JiraIntegration.Controllers
 
         private Highcharts GetReleaseBurnUpChart(ReportingViewModel model)
         {
+            TimeSpan interval = GetEndDateOfPI() - GetStartDateOfPI();
             string[] categories = GetXAxisCategories(model);
             object[] PlannedPointsForPI = GetBaseLine(model, categories.Length);// new[] { model.BaselinePlannedPoints }.Select(double.Parse).ToList().ToArray().Cast<object>().ToArray();
             object[] IdealBurn = IdealBurnLine(model, categories.Length);
@@ -735,12 +737,16 @@ namespace JiraIntegration.Controllers
 
 
             Highcharts chart = new Highcharts("chart")
-            .InitChart(new Chart { ZoomType = ZoomTypes.Xy, DefaultSeriesType = ChartTypes.Scatter })
-            .SetTitle(new Title { Text = "Release Burnup Chart" })
+            .InitChart(new Chart { ZoomType = ZoomTypes.Xy, DefaultSeriesType = ChartTypes.Line })
+            .SetTitle(new Title { Text = "PI Burnup Chart" })
             .SetXAxis(new XAxis
             {
                 Type = AxisTypes.Category,
-                Categories = categories
+                Categories = categories,
+                Labels = new XAxisLabels
+                {
+                    Rotation = 0.5
+                }
             })
             .SetYAxis(new YAxis
             {
@@ -756,7 +762,7 @@ namespace JiraIntegration.Controllers
                     {
                         Enabled = true
                     },
-                    EnableMouseTracking = false
+                    EnableMouseTracking = true
                 }
             })
             .SetSeries(new[]
@@ -829,8 +835,15 @@ namespace JiraIntegration.Controllers
             dtfi.DateSeparator = "-";
             int intervals = GetSprintsInPI();
             DateTime StartOfPI = GetStartDateOfPI();
+            //DateTime EndOfPI = GetEndDateOfPI();
+            //List<DateTime> datesInPI = GetDatesBetween(StartOfPI, EndOfPI);
             DateTime[] sprint_EndDates = new DateTime[(intervals * 2) + 1];
+            //DateTime[] sprint_EndDates = new DateTime[datesInPI.Count];
             sprint_EndDates[0] = StartOfPI;
+            //for (int i = 0; i < datesInPI.Count; i++)
+            //{
+            //    sprint_EndDates[i] = datesInPI[i];
+            //}
             for (int i = 1; i <= intervals * 2; i++)
             {
                 sprint_EndDates[i] = sprint_EndDates[i - 1].AddDays(7).Date;
@@ -860,7 +873,8 @@ namespace JiraIntegration.Controllers
             int intervals = GetSprintsInPI();
 
             //int idealBurnPerInterval = (BaselinePlannedPoints / (intervals * 2));
-            decimal RealidealBurnPerInterval = ((decimal)BaselinePlannedPoints / (decimal)NumberOfDataPoints);
+            //decimal RealidealBurnPerInterval = ((decimal)BaselinePlannedPoints / (decimal)NumberOfDataPoints);
+            decimal RealidealBurnPerInterval = ((decimal)BaselinePlannedPoints / (intervals *2));
             int idealBurnPerInterval = (int)Math.Round(RealidealBurnPerInterval, 0, MidpointRounding.AwayFromZero);
             int[] IdealBurnLine = new int[NumberOfDataPoints];
             IdealBurnLine[0] = 0;
@@ -870,7 +884,7 @@ namespace JiraIntegration.Controllers
             {
                 if (i == NumberOfDataPoints - 1)
                 {
-                    IdealBurnLine[i] = IdealBurnLine[i - 1]+ (BaselinePlannedPoints - IdealBurnLine[i - 1]);
+                    IdealBurnLine[i] = IdealBurnLine[i - 1] + (BaselinePlannedPoints - IdealBurnLine[i - 1]);
                 }
                 else
                 {
@@ -1329,6 +1343,24 @@ namespace JiraIntegration.Controllers
             }
             return StartOfPI;
         }
+        private DateTime GetEndDateOfPI()
+        {
+            var jiraSettings = ConfigurationManager.GetSection("JiraSettings") as NameValueCollection;
+            DateTime EndOfPI = DateTime.Now;
+            if (jiraSettings != null)
+            {
+                EndOfPI = DateTime.Parse(jiraSettings["EndDateofPI"].ToString());
+            }
+            return EndOfPI;
+        }
+        private List<DateTime> GetDatesBetween(DateTime startDate, DateTime endDate)
+        {
+            List<DateTime> allDates = new List<DateTime>();
+            for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
+                allDates.Add(date);
+            return allDates;
+        }
+
         private string GetJiraURL()
         {
             var jiraSettings = ConfigurationManager.GetSection("JiraSettings") as NameValueCollection;
@@ -1401,6 +1433,8 @@ namespace JiraIntegration.Controllers
                     return "STARCM";
                 case "uss":
                     return "USS";
+                case "conteng":
+                    return "CONTENG";
                 case "rbcs":
                     return "SCRBCS";
                 case "dbcs":
