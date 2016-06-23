@@ -33,10 +33,10 @@ namespace JiraIntegration.Controllers
 {
     public class HomeController : Controller
     {
-        //private const string jiraRestApiUrl = "https://jira.ges.symantec.com/rest/api/2/";
-        private const string jiraRestApiUrl = "https://jira-dev.ges.symantec.com/rest/api/2/";
+        //private const string jiraRestApiUrl = "https://asdf123.24234.adfwer.com/rest/api/2/";
+        private const string jiraRestApiUrl = "https://asdf234.2342342.com/rest/api/2/";
         private const string jiraUsername = "Star_JiraAPI";
-        private const string jiraPassword = "Symantec@1234";
+        private const string jiraPassword = "adsf234@2343243";
         private const string JiraCreateIssueResource = "issue";
         private const string JiraLinkIssueResource = "issueLink";
         private const string JiraGetIssueDetail = "issue";
@@ -1155,7 +1155,7 @@ namespace JiraIntegration.Controllers
             url = url + JiraFilterUrlEndPointPart1;
             url = url + GetJiraFilterId() + "/SearchRequest-" + GetJiraFilterId() + ".xml" + JiraFilterUrlEndPointPart2 + "os_username=" + GetUserName() + "&os_password=" + GetPassword();
             return url;
-            //string url = @"https://jira.ges.symantec.com/sr/jira.issueviews:searchrequest-xml/<filterid>/SearchRequest-<filterid>.xml?tempMax=9999&os_username=uid&os_password=pwd";
+            //string url = @"https://adsfasr.ges.wrwerw.com/sr/jira.issueviews:searchrequest-xml/<filterid>/SearchRequest-<filterid>.xml?tempMax=9999&os_username=uid&os_password=pwd";
         }
 
         private List<RequestDependencyListModel> GetStoryDepdencyList(int? fromTeamId, int? toTeamId, int? status, int? needBySprintId, int? SosStatus)
